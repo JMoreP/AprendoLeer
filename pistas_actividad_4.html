@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pistas Actividad 4 - Identificar Imágenes</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 40px;
+            background-color: #f8fafc;
+        }
+        
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            color: #2563eb;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        
+        .subtitle {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 12px;
+        }
+        
+        th {
+            text-align: left;
+            padding: 0 15px;
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        td {
+            padding: 20px 15px;
+            background: #ffffff;
+            border-top: 1px solid #f1f5f9;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        td:first-child {
+            border-left: 1px solid #f1f5f9;
+            border-radius: 12px 0 0 12px;
+            font-weight: 700;
+            color: #334155;
+            width: 30%;
+        }
+        
+        td:last-child {
+            border-right: 1px solid #f1f5f9;
+            border-radius: 0 12px 12px 0;
+            color: #2563eb;
+            font-style: italic;
+        }
+        
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+        
+        .instructions {
+            background: #eff6ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px dashed #bfdbfe;
+            font-size: 14px;
+            color: #1e40af;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .print-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+
+        .print-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .card { box-shadow: none; border: none; width: 100%; max-width: 100%; }
+            .btn-container { display: none; }
+            .instructions { border: 1px solid #bfdbfe; }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <header>
+            <h1>Guion de Grabación</h1>
+            <div class="subtitle">Actividad 4: Identificar Imágenes</div>
+        </header>
+
+        <div class="instructions">
+            <strong>Nota para grabación:</strong> Por favor, lea cada frase con claridad y calidez. Estas son las pistas que escuchará el niño cuando necesite ayuda para identificar la imagen.
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Elemento</th>
+                    <th>Frase para Grabar (Pista)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="emoji">☀️</span> SOL</td><td>Es amarillo y calienta</td></tr>
+                <tr><td><span class="emoji">🐱</span> GATO</td><td>Animal que hace miau</td></tr>
+                <tr><td><span class="emoji">🌺</span> FLOR</td><td>Tiene pétalos</td></tr>
+                <tr><td><span class="emoji">🍎</span> MANZANA</td><td>Fruta roja</td></tr>
+                <tr><td><span class="emoji">🏠</span> CASA</td><td>Donde vives</td></tr>
+                <tr><td><span class="emoji">🦆</span> PATO</td><td>Nada en el lago</td></tr>
+                <tr><td><span class="emoji">🌙</span> LUNA</td><td>Brilla de noche</td></tr>
+                <tr><td><span class="emoji">🐟</span> PEZ</td><td>Vive en el agua</td></tr>
+                <tr><td><span class="emoji">🌳</span> ARBOL</td><td>Tiene hojas y ramas</td></tr>
+                <tr><td><span class="emoji">🐶</span> PERRO</td><td>El mejor amigo del humano</td></tr>
+                <tr><td><span class="emoji">🥛</span> LECHE</td><td>Bebida blanca</td></tr>
+                <tr><td><span class="emoji">⛅</span> NUBE</td><td>Flota en el cielo</td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-container">
+            <button class="print-btn" onclick="window.print()">🖨️ Generar PDF de Pistas</button>
+        </div>
+    </div>
+</body>
+</html>

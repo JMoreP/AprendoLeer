@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global Tokens ───────────────────────────────────────────── */
+:root {
+  --color-bg-main:  #f0e8ff;
+  --color-bg-card:  #ffffff;
+  --radius-card:    1.5rem;
+  --shadow-card:    0 8px 32px rgba(128, 64, 255, 0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  font-family: 'Nunito', sans-serif;
+  background: var(--color-bg-main);
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #ede9fe; }
+::-webkit-scrollbar-thumb { background: #a78bfa; border-radius: 9999px; }
+
+/* ── Utilities ───────────────────────────────────────────────── */
+@layer components {
+  .card {
+    @apply bg-white rounded-3xl shadow-xl p-6;
+  }
+
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-2xl
+           px-6 py-3 transition-all duration-200 shadow-lg
+           hover:shadow-primary-400/40 hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .btn-success {
+    @apply bg-mint-500 hover:bg-mint-600 text-white font-bold rounded-2xl
+           px-6 py-3 transition-all duration-200 shadow-lg;
+  }
+
+  .btn-danger {
+    @apply bg-coral-500 hover:bg-coral-600 text-white font-bold rounded-2xl
+           px-6 py-3 transition-all duration-200 shadow-lg;
+  }
+
+  .letter-btn {
+    @apply w-20 h-20 md:w-24 md:h-24 rounded-2xl font-black text-4xl
+           flex items-center justify-center cursor-pointer
+           transition-all duration-200 select-none
+           shadow-lg hover:-translate-y-1 active:scale-95;
+  }
+
+  .activity-card {
+    @apply card hover:-translate-y-2 transition-all duration-300 cursor-pointer
+           border-2 border-transparent hover:border-primary-300;
+  }
+
+  .input-word {
+    @apply w-full border-4 border-primary-300 rounded-2xl px-4 py-3
+           text-2xl font-bold text-center text-gray-700 outline-none
+           focus:border-primary-500 transition-colors duration-200
+           bg-white placeholder:text-gray-300;
+  }
+}
+
+/* ── Star burst animation ────────────────────────────────────── */
+@keyframes starBurst {
+  0%   { transform: scale(0) rotate(0deg);   opacity: 1; }
+  80%  { transform: scale(1.4) rotate(20deg); opacity: 1; }
+  100% { transform: scale(1) rotate(15deg);   opacity: 1; }
+}
+.star-animate { animation: starBurst 0.4s ease-out forwards; }
+
+/* ── Shake error animation ───────────────────────────────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-10px); }
+  40%       { transform: translateX(10px); }
+  60%       { transform: translateX(-8px); }
+  80%       { transform: translateX(8px); }
+}
+.shake { animation: shake 0.4s ease-in-out; }
+
+/* ── Confetti particle ───────────────────────────────────────── */
+@keyframes confettiFall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.confetti-particle {
+  position: fixed;
+  width: 10px; height: 10px;
+  animation: confettiFall linear forwards;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Drag letter ─────────────────────────────────────────────── */
+.dragging-letter {
+  box-shadow: 0 20px 40px rgba(128, 64, 255, 0.4) !important;
+  transform: scale(1.1) rotate(-3deg) !important;
+  z-index: 100;
+}
+
+/* ── Energy bar glow ─────────────────────────────────────────── */
+.energy-bar-fill {
+  background: linear-gradient(90deg, #a78bfa, #f59e0b, #34d399);
+  background-size: 200% 100%;
+  animation: energyGlow 2s linear infinite;
+}
+@keyframes energyGlow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
