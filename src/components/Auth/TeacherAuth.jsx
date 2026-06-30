@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { loginParent, registerParent, loginWithGoogle } from '../../firebase';
 
-export default function ParentAuth() {
+export default function TeacherAuth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +22,7 @@ export default function ParentAuth() {
       } else {
         await registerParent(email, password);
       }
-      navigate('/parent');
+      navigate('/teacher');
     } catch (err) {
       console.error("Error de Auth:", err);
       setError(err.message || 'Error de autenticación.');
@@ -36,7 +36,7 @@ export default function ParentAuth() {
     setLoading(true);
     try {
       await loginWithGoogle();
-      navigate('/parent');
+      navigate('/teacher');
     } catch (err) {
       console.error("Error en Google Auth:", err);
       if (err.code !== 'auth/popup-closed-by-user') {
@@ -67,14 +67,14 @@ export default function ParentAuth() {
       >
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
-            <span className="text-6xl">👨‍👩‍👧</span>
+            <span className="text-6xl">👨‍🏫</span>
           </div>
           <h2 className="text-3xl font-black text-cyan-800">
-            Zona para Padres
+            Zona para Profesores
           </h2>
           <p className="text-gray-500 mt-2 font-medium">
             {isLogin 
-              ? 'Inicia sesión para ver el progreso de tu hijo/a.'
+              ? 'Inicia sesión para ver el progreso de tu alumno/a.'
               : 'Regístrate para monitorear el avance educativo.'}
           </p>
         </div>

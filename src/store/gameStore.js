@@ -7,6 +7,7 @@ import { playEnergyBurst } from '../utils/audio';
 import { saveDailyMetrics, saveGameProgress } from '../firebase';
 
 const STORAGE_KEY = 'juego-educativo-progreso';
+export const STARS_TO_UNLOCK = 2;
 
 export const useGameStore = create(
   persist(
@@ -32,6 +33,8 @@ export const useGameStore = create(
             stars: s.stars,
             score: s.score,
             energy: s.energy,
+            mistakes: s.mistakes,
+            successes: s.successes,
             lastPlayed: new Date().toISOString(),
           }).catch((err) => console.error("Error saving metrics:", err));
 
@@ -39,6 +42,8 @@ export const useGameStore = create(
           saveGameProgress(s.parentUid, s.playerName, {
             stars: s.stars,
             score: s.score,
+            mistakes: s.mistakes,
+            successes: s.successes,
             activityProgress: s.activityProgress,
             lastUpdated: new Date().toISOString(),
           }).catch((err) => console.error("Error saving full progress:", err));
@@ -50,6 +55,8 @@ export const useGameStore = create(
         set((s) => ({
           stars: data.stars ?? s.stars,
           score: data.score ?? s.score,
+          mistakes: data.mistakes ?? s.mistakes,
+          successes: data.successes ?? s.successes,
           activityProgress: data.activityProgress ?? s.activityProgress,
           energy: 0, // Opción A: Reiniciar energía al cargar sesión nueva
         }));
@@ -82,18 +89,55 @@ export const useGameStore = create(
       resetEnergy: () => set({ energy: 0 }),
 
 
-      // ── Stars & Score ────────────────────────────────────────────────────────
+      // ── Stars, Score, Mistakes & Successes ──────────────────────────────────
       stars: 0,
       score: 0,
+      mistakes: 0,
+      successes: 0,
       addScore: (points = 10) => {
         set((s) => ({ score: s.score + points }));
+        get().syncMetricsToFirebase();
+      },
+      addMistake: () => {
+        set((s) => ({ mistakes: s.mistakes + 1 }));
+        get().syncMetricsToFirebase();
+      },
+      addSuccess: () => {
+        set((s) => ({ successes: s.successes + 1 }));
         get().syncMetricsToFirebase();
       },
 
       // ── Activity Progress ────────────────────────────────────────────────────
       // { activityId: { completed: bool, bestScore: number, starsEarned: number } }
       activityProgress: {},
-      completeActivity: (activityId, scoreEarned) => {
+      recordActivityProgress: (activityId, sessionMistakes) => {
+        set((s) => {
+          const prog = s.activityProgress[activityId] || { completed: false, bestScore: 0, starsEarned: 3 };
+          
+          let currentStars = 3;
+          if (sessionMistakes >= 6) currentStars = 0;
+          else if (sessionMistakes >= 3) currentStars = 1;
+          else if (sessionMistakes >= 1) currentStars = 2;
+
+          return {
+            activityProgress: {
+              ...s.activityProgress,
+              [activityId]: {
+                ...prog,
+                // Only lower stars if it's not completed, or if new stars are somehow better (rare if they make mistakes)
+                starsEarned: prog.completed ? Math.max(prog.starsEarned, currentStars) : currentStars,
+              }
+            }
+          };
+        });
+        get().syncMetricsToFirebase();
+      },
+      completeActivity: (activityId, scoreEarned, sessionMistakes = 0) => {
+        let newStars = 3;
+        if (sessionMistakes >= 6) newStars = 0;
+        else if (sessionMistakes >= 3) newStars = 1;
+        else if (sessionMistakes >= 1) newStars = 2;
+
         setTimeout(() => { fireWinConfetti(); playVictory(); }, 150);
         set((s) => ({
           activityProgress: {
@@ -104,11 +148,19 @@ export const useGameStore = create(
                 scoreEarned,
                 s.activityProgress[activityId]?.bestScore ?? 0
               ),
-              starsEarned: Math.floor(scoreEarned / 30),
+              starsEarned: Math.max(newStars, s.activityProgress[activityId]?.starsEarned ?? 0),
             },
           },
         }));
         get().syncMetricsToFirebase();
+      },
+
+      // ── Activity Unlock Check ─────────────────────────────────────────────
+      // Activity 1 always unlocked; Activity N needs Activity N-1 with >= STARS_TO_UNLOCK stars
+      isActivityUnlocked: (activityId) => {
+        if (activityId <= 1) return true;
+        const prev = get().activityProgress[activityId - 1];
+        return prev && prev.starsEarned >= STARS_TO_UNLOCK;
       },
 
       // ── Current Activity State ───────────────────────────────────────────────
@@ -124,6 +176,8 @@ export const useGameStore = create(
           energy: 0,
           stars: 0,
           score: 0,
+          mistakes: 0,
+          successes: 0,
           activityProgress: {},
           currentActivity: null,
           playerName: '',
@@ -139,6 +193,8 @@ export const useGameStore = create(
         avatar: s.avatar,
         stars: s.stars,
         score: s.score,
+        mistakes: s.mistakes,
+        successes: s.successes,
         activityProgress: s.activityProgress,
         parentPin: s.parentPin,
         musicEnabled: s.musicEnabled,

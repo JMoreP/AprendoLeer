@@ -6,8 +6,8 @@ import { onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { auth } from './firebase';
 
 import LoginScreen from './components/Auth/LoginScreen';
-import ParentAuth from './components/Auth/ParentAuth';
-import ParentDashboard from './components/Auth/ParentDashboard';
+import TeacherAuth from './components/Auth/TeacherAuth';
+import TeacherDashboard from './components/Auth/TeacherDashboard';
 import MainMenu from './components/MainMenu';
 import Activity1 from './activities/Activity1';
 import Activity2 from './activities/Activity2';
@@ -21,10 +21,16 @@ function RequireAuth({ children }) {
   return children;
 }
 
+function RequireUnlocked({ activityId, children }) {
+  const isActivityUnlocked = useGameStore((s) => s.isActivityUnlocked);
+  if (!isActivityUnlocked(activityId)) return <Navigate to="/menu" replace />;
+  return children;
+}
+
 export default function App() {
   const setParentUid = useGameStore((s) => s.setParentUid);
   const [isFirebaseLoaded, setIsFirebaseLoaded] = useState(false);
-  const [parentLoggedIn, setParentLoggedIn] = useState(false);
+  const [teacherLoggedIn, setTeacherLoggedIn] = useState(false);
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
@@ -40,12 +46,12 @@ export default function App() {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        console.log("App: Padre autenticado:", user.email);
+        console.log("App: Profesor autenticado:", user.email);
         setParentUid(user.uid);
-        setParentLoggedIn(true);
+        setTeacherLoggedIn(true);
       } else {
         setParentUid(null);
-        setParentLoggedIn(false);
+        setTeacherLoggedIn(false);
       }
       setIsFirebaseLoaded(true);
     });
@@ -66,10 +72,10 @@ export default function App() {
           element={<LoginScreen />}
         />
 
-        {/* Zona Padres */}
+        {/* Zona Profesores */}
         <Route
-          path="/parent"
-          element={parentLoggedIn ? <ParentDashboard /> : <ParentAuth />}
+          path="/teacher"
+          element={teacherLoggedIn ? <TeacherDashboard /> : <TeacherAuth />}
         />
 
         {/* Main menu */}
@@ -79,9 +85,9 @@ export default function App() {
 
         {/* Activities */}
         <Route path="/actividad/1" element={<RequireAuth><Activity1 /></RequireAuth>} />
-        <Route path="/actividad/2" element={<RequireAuth><Activity2 /></RequireAuth>} />
-        <Route path="/actividad/3" element={<RequireAuth><Activity3 /></RequireAuth>} />
-        <Route path="/actividad/4" element={<RequireAuth><Activity4 /></RequireAuth>} />
+        <Route path="/actividad/2" element={<RequireAuth><RequireUnlocked activityId={2}><Activity2 /></RequireUnlocked></RequireAuth>} />
+        <Route path="/actividad/3" element={<RequireAuth><RequireUnlocked activityId={3}><Activity3 /></RequireUnlocked></RequireAuth>} />
+        <Route path="/actividad/4" element={<RequireAuth><RequireUnlocked activityId={4}><Activity4 /></RequireUnlocked></RequireAuth>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

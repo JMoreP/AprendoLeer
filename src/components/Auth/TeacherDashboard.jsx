@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { auth, getRecentMetrics, logoutParent, saveChildProfile, getChildrenProfiles } from '../../firebase';
+import { auth, getRecentMetrics, getGameProgress, logoutParent, saveChildProfile, getChildrenProfiles } from '../../firebase';
 import { useGameStore } from '../../store/gameStore';
+import { generateStudentReport } from '../../utils/generateReport';
 
 const AVATARS = ['🦁', '🐸', '🐼', '🦊', '🐨', '🐯', '🐙', '🦋'];
 
-export default function ParentDashboard() {
+export default function TeacherDashboard() {
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
   const [metrics, setMetrics] = useState([]);
+  const [gameProgress, setGameProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAddingChild, setIsAddingChild] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const navigate = useNavigate();
   const setParentUid = useGameStore((s) => s.setParentUid);
@@ -53,9 +56,14 @@ export default function ParentDashboard() {
   const handleSelectChild = async (child) => {
     setSelectedChild(child);
     setLoading(true);
+    setGameProgress(null);
     try {
-      const data = await getRecentMetrics(auth.currentUser.uid, child.name, 14);
+      const [data, progress] = await Promise.all([
+        getRecentMetrics(auth.currentUser.uid, child.name, 14),
+        getGameProgress(auth.currentUser.uid, child.name),
+      ]);
       setMetrics(data);
+      setGameProgress(progress);
     } catch (err) {
       console.error("Error al cargar métricas:", err);
     } finally {
@@ -131,7 +139,7 @@ export default function ParentDashboard() {
         <aside className="lg:col-span-1 space-y-4">
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Mis Niños</h3>
+              <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Mis Alumnos</h3>
               <button 
                 onClick={() => setIsAddingChild(true)}
                 className="w-8 h-8 bg-cyan-500 text-white rounded-full flex items-center justify-center font-bold hover:bg-cyan-600 transition-colors"
@@ -153,7 +161,7 @@ export default function ParentDashboard() {
                 </button>
               ))}
               {children.length === 0 && (
-                <p className="text-xs text-slate-400 font-bold text-center py-4">No hay niños registrados.</p>
+                <p className="text-xs text-slate-400 font-bold text-center py-4">No hay alumnos registrados.</p>
               )}
             </div>
           </div>
@@ -171,10 +179,10 @@ export default function ParentDashboard() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-cyan-100"
               >
-                <h2 className="text-2xl font-black text-slate-800 mb-6 uppercase tracking-tighter">Registrar Nuevo Niño</h2>
+                <h2 className="text-2xl font-black text-slate-800 mb-6 uppercase tracking-tighter">Registrar Nuevo Alumno</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nombre del Niño</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nombre del Alumno</label>
                     <input 
                       type="text" 
                       value={newName}
@@ -202,7 +210,7 @@ export default function ParentDashboard() {
                     onClick={handleAddChild}
                     disabled={saving || !newName.trim()}
                     className="px-8 py-3 bg-cyan-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-lg shadow-cyan-100 disabled:opacity-50"
-                  >{saving ? 'Guardando...' : 'Guardar Niño'}</button>
+                  >{saving ? 'Guardando...' : 'Guardar Alumno'}</button>
                   <button onClick={() => setIsAddingChild(false)} className="px-8 py-3 text-slate-400 font-black text-xs uppercase tracking-widest">Cancelar</button>
                 </div>
               </motion.div>
@@ -214,11 +222,42 @@ export default function ParentDashboard() {
                 className="space-y-6"
               >
                 {/* Header del Niño Seleccionado */}
-                <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-200 flex items-center gap-6">
-                  <div className="text-5xl bg-slate-50 p-4 rounded-3xl border-2 border-slate-100">{selectedChild.avatar}</div>
-                  <div>
-                    <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter">Reporte de {selectedChild.name}</h2>
-                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Progreso acumulado y actividad reciente</p>
+                <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-200">
+                  <div className="flex items-center gap-6">
+                    <div className="text-5xl bg-slate-50 p-4 rounded-3xl border-2 border-slate-100">{selectedChild.avatar}</div>
+                    <div className="flex-1">
+                      <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter">Reporte de {selectedChild.name}</h2>
+                      <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Progreso acumulado y actividad reciente</p>
+                    </div>
+                  </div>
+                  {/* PDF Download Button */}
+                  <div className="mt-4 flex gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      disabled={generatingPdf}
+                      onClick={async () => {
+                        setGeneratingPdf(true);
+                        try {
+                          generateStudentReport({
+                            childName: selectedChild.name,
+                            childAvatar: selectedChild.avatar,
+                            metrics,
+                            gameProgress,
+                            teacherEmail: auth.currentUser?.email,
+                          });
+                        } catch (err) {
+                          console.error('Error generando PDF:', err);
+                          alert('Error al generar el informe PDF.');
+                        } finally {
+                          setGeneratingPdf(false);
+                        }
+                      }}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-cyan-200/50 disabled:opacity-50 transition-all hover:shadow-xl"
+                    >
+                      <span className="text-lg">{generatingPdf ? '⏳' : '📄'}</span>
+                      {generatingPdf ? 'Generando...' : 'Descargar Informe PDF'}
+                    </motion.button>
                   </div>
                 </div>
 
@@ -230,9 +269,13 @@ export default function ParentDashboard() {
                   {metrics.map((m, i) => (
                     <div key={m.date} className="bg-white p-6 rounded-3xl border-2 border-slate-50 shadow-sm">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">📅 {m.date}</p>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center mb-3">
                         <span className="text-2xl font-black text-yellow-500">⭐ {m.stars || 0}</span>
                         <span className="text-sm font-black text-cyan-600">🎯 {m.score || 0} pts</span>
+                      </div>
+                      <div className="flex justify-between items-center bg-slate-100 p-3 rounded-xl">
+                        <span className="text-sm font-black text-green-600">✅ {m.successes || 0} Aciertos</span>
+                        <span className="text-sm font-black text-red-500">❌ {m.mistakes || 0} Errores</span>
                       </div>
                     </div>
                   ))}
@@ -246,11 +289,11 @@ export default function ParentDashboard() {
             ) : (
               <div className="h-full flex flex-col items-center justify-center py-20 text-center space-y-4">
                 <div className="text-6xl opacity-20">👤</div>
-                <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Selecciona un niño para ver su progreso</p>
+                <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Selecciona un alumno para ver su progreso</p>
                 <button 
                   onClick={() => setIsAddingChild(true)}
                   className="px-6 py-2 bg-cyan-100 text-cyan-700 rounded-xl font-black text-xs uppercase tracking-widest"
-                >Añadir mi primer niño</button>
+                >Añadir mi primer alumno</button>
               </div>
             )}
           </AnimatePresence>

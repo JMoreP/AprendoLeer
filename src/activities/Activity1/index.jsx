@@ -15,6 +15,9 @@ export default function Activity1() {
   const loseEnergy = useGameStore((s) => s.loseEnergy);
   const addScore = useGameStore((s) => s.addScore);
   const completeActivity = useGameStore((s) => s.completeActivity);
+  const addMistake = useGameStore((s) => s.addMistake);
+  const addSuccess = useGameStore((s) => s.addSuccess);
+  const recordActivityProgress = useGameStore((s) => s.recordActivityProgress);
 
   const [level, setLevel] = useState(1);
   const levelRef = useRef(1);
@@ -24,6 +27,7 @@ export default function Activity1() {
   const [wrongLetter, setWrongLetter] = useState(null);
   const [count, setCount] = useState(0);
   const [score, setScore] = useState(0);
+  const [sessionMistakes, setSessionMistakes] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const isMounted = useRef(true);
 
@@ -57,6 +61,7 @@ export default function Activity1() {
   // Iniciar la primera pregunta al montar el componente con la instrucción
   useEffect(() => {
     isMounted.current = true;
+    recordActivityProgress(1, 0); // Initialize as in progress
     nextQuestion(true);
 
     return () => {
@@ -70,17 +75,18 @@ export default function Activity1() {
     if (feedback) return;
     if (letter === question) {
       setFeedback('correct');
-      
+
       // Evitar empalmes: espera a que termine el audio O 1 segundo, lo que dure más
       await Promise.all([playSuccess(), new Promise((r) => setTimeout(r, 1000))]);
       if (!isMounted.current) return;
 
+      addSuccess();
       await addEnergy(20);
-      addScore(10);
-      setScore((s) => s + 10);
+      addScore(15);
+      setScore((s) => s + 15);
       const newCount = count + 1;
       setCount(newCount);
-      
+
       if (newCount >= QUESTIONS_PER_ROUND) {
         setShowSuccess(true);
       } else {
@@ -95,11 +101,18 @@ export default function Activity1() {
       setFeedback('wrong');
       playError();
       setWrongLetter(letter);
+      addMistake();
+      setSessionMistakes((m) => {
+        const next = m + 1;
+        recordActivityProgress(1, next);
+        return next;
+      });
       loseEnergy(10);
-      setTimeout(() => { 
+      setScore((s) => Math.max(0, s - 10));
+      setTimeout(() => {
         if (isMounted.current) {
-          setFeedback(null); 
-          setWrongLetter(null); 
+          setFeedback(null);
+          setWrongLetter(null);
         }
       }, 900);
     }
@@ -112,10 +125,11 @@ export default function Activity1() {
   };
 
   const handleContinue = () => {
-    completeActivity(1, score);
+    completeActivity(1, score, sessionMistakes);
     setShowSuccess(false);
     setCount(0);
     setScore(0);
+    setSessionMistakes(0);
     setLevel(1);
     levelRef.current = 1;
     // Ya no es el FirstLoad, es un salto a nivel 1 de nuevo, pero si quieres la instrucción se la podemos dar. 

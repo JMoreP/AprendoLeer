@@ -1,7 +1,7 @@
 // ── Main Menu ──────────────────────────────────────────────────────────────────
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, STARS_TO_UNLOCK } from '../store/gameStore';
 import EnergyBar from './UI/EnergyBar';
 import { playClick } from '../utils/SoundManager';
 
@@ -56,12 +56,14 @@ export default function MainMenu() {
   const stars = useGameStore((s) => s.stars);
   const score = useGameStore((s) => s.score);
   const activityProgress = useGameStore((s) => s.activityProgress);
+  const isActivityUnlocked = useGameStore((s) => s.isActivityUnlocked);
   const resetAll = useGameStore((s) => s.resetAll);
   const setPlayerName = useGameStore((s) => s.setPlayerName);
 
   const completedCount = Object.values(activityProgress).filter((a) => a.completed).length;
 
-  const handleNav = (route) => {
+  const handleNav = (route, actId) => {
+    if (!isActivityUnlocked(actId)) return;
     playClick();
     navigate(route);
   };
@@ -147,21 +149,49 @@ export default function MainMenu() {
         >
           {ACTIVITIES.map((act) => {
             const done = activityProgress[act.id]?.completed;
+            const unlocked = isActivityUnlocked(act.id);
+            const prevStars = activityProgress[act.id - 1]?.starsEarned || 0;
             return (
               <motion.button
                 key={act.id}
                 variants={cardVariants}
-                whileHover={{ scale: 1.02, y: -4 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleNav(act.route)}
-                className={`${act.bg} ${act.border} border-2 rounded-3xl p-5 text-left shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden`}
+                whileHover={unlocked ? { scale: 1.02, y: -4 } : {}}
+                whileTap={unlocked ? { scale: 0.98 } : {}}
+                onClick={() => handleNav(act.route, act.id)}
+                className={`${act.bg} ${act.border} border-2 rounded-3xl p-5 text-left shadow-lg transition-shadow relative overflow-hidden
+                  ${unlocked ? 'hover:shadow-xl cursor-pointer' : 'opacity-50 cursor-not-allowed grayscale'}`}
+                disabled={!unlocked}
               >
+                {/* Lock overlay for locked activities */}
+                {!unlocked && (
+                  <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-[2px] rounded-3xl z-10 flex flex-col items-center justify-center gap-2">
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1], rotate: [0, -5, 5, 0] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="text-5xl drop-shadow-lg"
+                    >
+                      🔒
+                    </motion.div>
+                    <div className="bg-white/90 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-lg text-center">
+                      <p className="text-xs font-black text-gray-600">Necesitas</p>
+                      <div className="flex items-center justify-center gap-1">
+                        {Array.from({ length: STARS_TO_UNLOCK }).map((_, i) => (
+                          <span key={i} className={i < prevStars ? 'text-yellow-400' : 'text-gray-300'}>
+                            ⭐
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-[10px] font-bold text-gray-400">en Nivel {act.id - 1}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Completed badge */}
                 {done && (
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full"
+                    className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20"
                   >
                     ✓ Completada
                   </motion.div>
